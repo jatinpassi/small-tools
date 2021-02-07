@@ -1,27 +1,49 @@
 const request = require('request');
-const path = require('path');
 const fs = require('fs');
-// const url = require('url');
 
-function spider(arguments) {
-  let link = process.argv[2] || arguments;
+
+function saveFile(path, data, cb) {
+  if (!!fs.existsSync(path)) {
+    
+    fs.unlinkSync(path);
+  }
+  fs.writeFileSync(path, data, (err) => {
+    if (err) {
+      fs.unlinkSync(path);
+      return cb(err);
+    }
+    cb(null,"done")
+  });
+}
+
+function resolveUrl(url) {
+  url = new URL(url)
+  let link = url.hostname;
+  let path = url.pathname == '/' ? '/index' : url.pathname;
+  let params = url.searchParams.toString() == '' ? '' : "/" + url.searchParams.toString();
+  return [ link, path, params, url.href ];
+}
+
+function download(url,cb) {
+  request.get(url, (err, res, body) => { 
+    if (err) return cb(err);
+    cb(null,body)
+  })
+}
+
+function spider(arguments,cb) {
   let diractory = __dirname + '/directory';
   if (!fs.existsSync(diractory)) {
     fs.mkdirSync(diractory);
   }
-  let url = new URL(link)
-  link = url.hostname;
-  let path = url.pathname == '/' ? '/index' : url.pathname;
-  let params = url.searchParams.toString() == '' ? '' : "/" + url.searchParams.toString();
-  if (fs.existsSync(`${diractory}/${link}${path}${params}`)) {
-    console.log("file Exists")
-    return;
-  }
+  let [link, path, params, href] = resolveUrl(process.argv[2] || arguments);
+  // if (fs.existsSync(`${diractory}/${link}${path}${params}`)) {
+  //   return cb(new Error("file already exists"))
+  // }
   try {
-    request.get(url.href, (err, res, body) => {
+    download(href, (err, data) => {
       if (err) {
-        console.log("unable to reach " + link)
-        return;
+        return cb(err)
       }
       let download_dir = `${diractory}/${link}`;
       if (!fs.existsSync(download_dir)) {
@@ -30,15 +52,16 @@ function spider(arguments) {
       if (params != '' && !fs.existsSync(download_dir+path)) {
         fs.mkdirSync(download_dir+path);
       }
-      fs.writeFileSync(`${diractory}/${link}${path}${params}`, body, (err) => {
-        fs.unlinkSync(download_dir);
-        console.log("unable to write")
-      });
+      saveFile(`${diractory}/${link}${path}${params}`, data, (err, data) => {
+        if (err) return cb(err);
+        cb(data)
+      })
     })
-  } catch {
-    console.log("unable to reach " + link);
-    return;
+  } catch(err) {
+    return cb(err)
   }
 }
 
-spider("https://www.youtube.com");
+spider("https://www.youtube.com", (err) => {
+  console.log(err)
+});

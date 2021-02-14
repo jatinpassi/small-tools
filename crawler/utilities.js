@@ -18,7 +18,7 @@ const urltoPath = (url,cb) => {
     cb(null,`${url.host.replace("/", "")}${url.pathname}/${url.searchParams.toString()}`);
 }
 
-exports.saveRequests = (url,filePath,cb) => {
+exports.saveRequests = saveRequests = (url,filePath,cb) => {
     request.get(url, (err, res, body) => {
         if (err) {
             return cb(err)
@@ -32,7 +32,7 @@ exports.saveRequests = (url,filePath,cb) => {
     })
 }
 
-exports.resolvePath = (rootDir = __dirname, url,cb) => {
+exports.resolvePath = resolvePath = (rootDir = __dirname, url,cb) => {
     urltoPath(url, (err, path) => {
         if (err) {
             return cb(err,url)
@@ -54,3 +54,19 @@ exports.resolvePath = (rootDir = __dirname, url,cb) => {
     })
     
 }
+
+exports.download = download = (url, directory = __dirname,cb) => {
+    resolvePath(directory, url, (err, path) => {
+        if (err) {
+
+            return cb(err,null,path);
+        }
+        saveRequests(url, path, (err,data) => {
+            if (err) {
+                return cb(err)
+            }
+            cb(null,data,path)
+        })
+    })
+}
+

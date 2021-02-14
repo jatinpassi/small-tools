@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 const async = require('async');
 module.exports = function (links, directory, mainUrl) {
-    async.concatLimit(links, 2, (link, cb) => {
+    async.concatSeries(links, (link, cb) => {
         if (link[0] === '/') {
             newUrl = new URL(mainUrl)
             link = newUrl.origin + link;
@@ -16,6 +16,5 @@ module.exports = function (links, directory, mainUrl) {
 
         })
     
-    }, (err, data) => {
-    })
+    },(err, data)=>{})
 }

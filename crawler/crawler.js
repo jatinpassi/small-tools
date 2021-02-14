@@ -1,13 +1,14 @@
 const cheerio = require("cheerio");
 const utilities = require("./utilities")
-const spiderLinks = require('./spider-link').concatLimit;
+
+const spiderLinks = require('./spider-link').concatSeries;
 
 const spider = (url, directory = __dirname) => {
     utilities.download(url, directory, (err,data,path) => {
         if (err) {
             console.log(err);
             return;
-      }
+        }
 
         let links = [];
         const $ = cheerio.load(data);
